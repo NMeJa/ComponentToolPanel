@@ -4,10 +4,14 @@ using UnityEditor;
 
 namespace ComponentToolPanel
 {
-	public abstract class ExtendedEditor : UnityEditor.Editor
+	public abstract class ExtendedEditor : Editor
 	{
-		protected UnityEditor.Editor defaultEditor;
-		private UnityEditor.Editor fallbackEditor;
+		//I know not the best name. But it's the best I can come up with. 
+		private const BindingFlags BindingFlagsBothPublicAndNon = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+		private const string EnableName = "OnEnable";
+		private const string DisableName = "OnDisable";
+		protected Editor defaultEditor;
+		private Editor fallbackEditor;
 
 		public bool IsExtended
 		{
@@ -25,9 +29,8 @@ namespace ComponentToolPanel
 			defaultEditor = CreateEditor(targets, DefaultEditorType);
 			var fallbackEditorType = GetDefaultEditor();
 			fallbackEditor = CreateEditor(targets, fallbackEditorType);
-			var enableMethod =
-				fallbackEditorType.GetMethod("OnEnable",
-				                             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+			var enableMethod = fallbackEditorType.GetMethod(EnableName, BindingFlagsBothPublicAndNon);
+			
 			if (enableMethod != null)
 			{
 				enableMethod.Invoke(fallbackEditor, null);
@@ -40,10 +43,7 @@ namespace ComponentToolPanel
 		protected virtual void OnDisable()
 		{
 			OnDisableInternal();
-			var disableMethod = fallbackEditor.GetType()
-			                                  .GetMethod("OnDisable",
-			                                             BindingFlags.Instance | BindingFlags.NonPublic |
-			                                             BindingFlags.Public);
+			var disableMethod = fallbackEditor.GetType().GetMethod(DisableName, BindingFlagsBothPublicAndNon);
 			if (disableMethod != null)
 			{
 				disableMethod.Invoke(fallbackEditor, null);
@@ -73,12 +73,14 @@ namespace ComponentToolPanel
 
 		private Type GetDefaultEditor()
 		{
+			// Not readable Linq conversion this is better
+			// ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 			foreach (var editor in ComponentToolPanel.originalEditors)
 			{
 				if (editor.inspectedType != InspectedType) continue;
+				if (editor.inspectorType == GetType() || editor.inspectorType == DefaultEditorType) continue;
 
-				if (editor.inspectorType != GetType() && editor.inspectorType != DefaultEditorType)
-					return editor.inspectorType;
+				return editor.inspectorType;
 			}
 
 			return DefaultEditorType;

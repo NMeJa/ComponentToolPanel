@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UI;
-using Object = UnityEngine.Object;
-#if UNITY_5_1 || UNITY_5_2 || UNITY_5_3 || UNITY_5_3_OR_NEWER
-#endif
 
 namespace ComponentToolPanel
 {
+	//SuppressMessage are for making sure that older versions of Unity don't have problem, while accidentally refactoring the code
+	[SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
+	[SuppressMessage("ReSharper", "ConvertToNullCoalescingCompoundAssignment")]
 	[CustomEditor(typeof(GameObject), true)]
 	[CanEditMultipleObjects]
-	public class ComponentToolPanel : UnityEditor.Editor
+	[SuppressMessage("ReSharper", "UnusedParameter.Local")]
+	public class ComponentToolPanel : Editor
 	{
 		private const string GameObjectInspectorTypeName = "UnityEditor.GameObjectInspector, UnityEditor";
 		private const string AddComponentWindowTypeName = "UnityEditor.AddComponentWindow, UnityEditor";
@@ -24,14 +26,14 @@ namespace ComponentToolPanel
 		private const string DummyName = "Component Tool Panel Dummy";
 		private const string CopiedComponentIDPrefsKey = "Component Tool Panel Copied Component ID";
 
-		private static readonly List<CtpExtendedEditors> extendedEditors = new()
+		private static readonly List<ExtendedEditors> extendedEditors = new List<ExtendedEditors>
 		{
-			new CtpExtendedEditors(typeof(Transform), typeof(TransformInspector))
+			new ExtendedEditors(typeof(Transform), typeof(TransformInspector))
 		};
 
-		public static readonly List<CtpExtendedEditors> originalEditors = new();
+		public static readonly List<ExtendedEditors> originalEditors = new List<ExtendedEditors>();
 
-		private static readonly Dictionary<Type, List<Type>> componentDependencies = new()
+		private static readonly Dictionary<Type, List<Type>> componentDependencies = new Dictionary<Type, List<Type>>
 		{
 			{
 				typeof(Camera), new List<Type>
@@ -104,13 +106,13 @@ namespace ComponentToolPanel
 		private static MonoScript[] allScripts;
 		private List<Component>[] components; //List of components attached to each of the gameObjects
 
-		private UnityEditor.Editor defaultEditor; //UnityEditor.GameObjectInspector
+		private Editor defaultEditor; //UnityEditor.GameObjectInspector
 		private bool[] foldouts; //used when targets.count > 1
 		private GameObject[] gameObjects; //GameObjects being inspected
 		private ReorderableList[] lists;
 		private Transform[] transforms; //List containing the transforms of evey game object
 
-		private static MonoScript[] AllScripts => allScripts ??= MonoImporter.GetAllRuntimeMonoScripts();
+		private static MonoScript[] AllScripts => allScripts = allScripts ?? MonoImporter.GetAllRuntimeMonoScripts();
 
 		//When targets.Count == 1, Save the state of the foldout
 		private static bool Foldout
@@ -124,7 +126,7 @@ namespace ComponentToolPanel
 		{
 			get
 			{
-				Object obj = EditorUtility.InstanceIDToObject(EditorPrefs.GetInt(CopiedComponentIDPrefsKey, 0));
+				var obj = EditorUtility.InstanceIDToObject(EditorPrefs.GetInt(CopiedComponentIDPrefsKey, 0));
 				if (obj is Component component) return component;
 
 				EditorPrefs.DeleteKey(CopiedComponentIDPrefsKey);
@@ -181,12 +183,12 @@ namespace ComponentToolPanel
 				                                   ?.GetValue(list[i]);
 				try
 				{
-					CtpExtendedEditors extendedEditor = extendedEditors.First(x => x.inspectedType == inspectedType);
+					ExtendedEditors extendedEditor = extendedEditors.First(x => x.inspectedType == inspectedType);
 					FieldInfo inspectorTypeField = list[i].GetType().GetField("m_InspectorType",
 					                                                          BindingFlags.Instance |
 					                                                          BindingFlags.Public);
 					Type inspectorType = (Type) inspectorTypeField?.GetValue(list[i]);
-					originalEditors.Add(new CtpExtendedEditors(inspectedType, inspectorType));
+					originalEditors.Add(new ExtendedEditors(inspectedType, inspectorType));
 
 					if (inspectorType != extendedEditor.inspectorType)
 						list[i].GetType().GetField("m_IsFallback", BindingFlags.Instance | BindingFlags.Public)
@@ -203,22 +205,21 @@ namespace ComponentToolPanel
 		private void InitializeList(int index)
 		{
 			foldouts[index] = true;
-			GameObject gameObject = gameObjects[index] = (GameObject) targets[index];
-			List<Component> localComponent =
-				components[index] = new List<Component>(gameObject.GetComponents<Component>());
+			var gameObject = gameObjects[index] = (GameObject) targets[index];
+			var localComponent = components[index] = new List<Component>(gameObject.GetComponents<Component>());
 			transforms[index] = gameObject.transform;
+
 			//Remove the Transform component, as it's mostly unuseful
 			localComponent.RemoveAt(0);
-			ReorderableList list = lists[index] =
-				new ReorderableList(new List<Component>(localComponent), typeof(Component), true, true, true, false);
+
+			var list = lists[index] = new ReorderableList(new List<Component>(localComponent), typeof(Component),
+			                                              true, true, true, false);
 			//No selected box is drawn
-			list.drawElementBackgroundCallback += (_, _, _, _) => { };
+			list.drawElementBackgroundCallback += (rect, localComponentIndex, isActive, isFocused) => { };
 			//For the header of the list, the transform is drawn
-			list.drawHeaderCallback += rect => { DrawElement(rect, gameObject.transform); };
-			list.drawElementCallback += (rect, localComponentIndex, _, _) =>
-				{
-					DrawElement(rect, localComponent[localComponentIndex]);
-				};
+			list.drawHeaderCallback += rect => DrawElement(rect, gameObject.transform);
+			list.drawElementCallback += (rect, localComponentIndex, isActive, isFocused) =>
+				DrawElement(rect, localComponent[localComponentIndex]);
 
 			//Open AddComponentWindow
 			list.onAddDropdownCallback += (rect, _) =>
@@ -311,7 +312,7 @@ namespace ComponentToolPanel
 
 			if (extendedEditorType != null)
 			{
-				UnityEditor.Editor editor = CreateEditor(component);
+				var editor = CreateEditor(component);
 
 				ExtendedEditor extendedEditor = editor as ExtendedEditor;
 				if (extendedEditor != null)
@@ -421,7 +422,7 @@ namespace ComponentToolPanel
 							                            dependants + " depends on it", "Ok");
 					}
 
-					EditorGUIUtility.ExitGUI();
+					GUIUtility.ExitGUI();
 				}
 
 				if (isRectTransform)
@@ -807,7 +808,8 @@ namespace ComponentToolPanel
 			defaultEditor.OnPreviewSettings();
 		}
 
-		public override Texture2D RenderStaticPreview(string assetPath, Object[] subAssets, int width, int height)
+		public override Texture2D RenderStaticPreview(
+			string assetPath, UnityEngine.Object[] subAssets, int width, int height)
 		{
 			return defaultEditor.RenderStaticPreview(assetPath, subAssets, width, height);
 		}

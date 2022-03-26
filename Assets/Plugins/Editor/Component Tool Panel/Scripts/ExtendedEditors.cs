@@ -2,12 +2,12 @@
 
 namespace ComponentToolPanel
 {
-	public struct CtpExtendedEditors
+	public struct ExtendedEditors
 	{
 		public readonly Type inspectedType;
 		public readonly Type inspectorType;
 
-		public CtpExtendedEditors(Type inspectedType, Type inspectorType)
+		public ExtendedEditors(Type inspectedType, Type inspectorType)
 		{
 			this.inspectedType = inspectedType;
 			this.inspectorType = inspectorType;

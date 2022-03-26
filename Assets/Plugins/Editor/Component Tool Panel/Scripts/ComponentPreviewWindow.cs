@@ -41,6 +41,8 @@ namespace ComponentToolPanel
 				b = !(editor is {serializedObject: { }}) || editor.serializedObject.targetObject == null;
 #elif UNITY_2018_4_OR_NEWER
 				b = editor == null || editor.serializedObject is null || editor.serializedObject.targetObject == null;
+#else
+				throw new NotSupportedException("Why are you even using This Editor?");
 #endif
 				return b;
 			}
@@ -85,7 +87,7 @@ namespace ComponentToolPanel
 			var components = Selection.objects.Contains(((Component) editor.serializedObject.targetObject).gameObject);
 			var targetName = components ? string.Empty : $" ({editor.serializedObject.targetObject.name})";
 			EditorGUILayout.LabelField($"{targetTypeName}{targetName} Preview ", EditorStyles.boldLabel,
-			                           GUILayout.Width(400 - 16 - 1));
+			                           GUILayout.Width(Width - 16 - 1));
 		}
 
 		private void WindowDragging(Event currentEvent)
@@ -170,7 +172,7 @@ namespace ComponentToolPanel
 
 		public static void Show(Component component)
 		{
-			var window = windows.FirstOrDefault(x => x.Value.target == component).Key;
+			var window = windows.FirstOrDefault(e => e.Value.target == component).Key;
 			if (window == null)
 			{
 				window = CreateWindow(component);
