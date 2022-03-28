@@ -111,6 +111,7 @@ namespace ComponentToolPanel
 		private GameObject[] gameObjects; //GameObjects being inspected
 		private ReorderableList[] lists;
 		private Transform[] transforms; //List containing the transforms of evey game object
+		private bool IsTargetAmountLimitReached => targets.Length > 7;
 
 		private static MonoScript[] AllScripts => allScripts = allScripts ?? MonoImporter.GetAllRuntimeMonoScripts();
 
@@ -140,6 +141,8 @@ namespace ComponentToolPanel
 			//Initialization Stuff 
 			InitializeCustomInspectors();
 			defaultEditor = CreateEditor(targets, Type.GetType(GameObjectInspectorTypeName));
+			if (IsTargetAmountLimitReached) return;
+
 			gameObjects = new GameObject[targets.Length];
 			lists = new ReorderableList[targets.Length];
 			components = new List<Component>[targets.Length];
@@ -166,7 +169,7 @@ namespace ComponentToolPanel
 
 		public void OnSceneDrag(SceneView sceneView, int index)
 		{
-			defaultEditor.GetType().GetMethod("OnSceneDrag")?.Invoke(defaultEditor, new object[] {sceneView});
+			defaultEditor.GetType().GetMethod("OnSceneDrag")?.Invoke(defaultEditor, new object[] {sceneView, index});
 		}
 
 		private void InitializeCustomInspectors()
@@ -545,6 +548,7 @@ namespace ComponentToolPanel
 
 		protected override void OnHeaderGUI()
 		{
+			if (IsTargetAmountLimitReached) return;
 			//Paint the header of the default editor, then add custom functionality
 			defaultEditor.DrawHeader();
 
@@ -698,7 +702,7 @@ namespace ComponentToolPanel
 		}
 
 		//Utility method for getting components dependants
-		string GetComponentDependants(Component component)
+		private string GetComponentDependants(Component component)
 		{
 			Type type = component.GetType();
 			Component[] components1 = component.GetComponents<Component>();
@@ -790,32 +794,58 @@ namespace ComponentToolPanel
 
 		public override void OnInspectorGUI()
 		{
+			if (IsTargetAmountLimitReached)
+			{
+				base.OnInspectorGUI();
+				return;
+			}
+
 			defaultEditor.OnInspectorGUI();
 		}
 
 		public override void ReloadPreviewInstances()
 		{
+			if (IsTargetAmountLimitReached)
+			{
+				base.ReloadPreviewInstances();
+				return;
+			}
+
 			defaultEditor.OnInspectorGUI();
 		}
 
 		public override bool HasPreviewGUI()
 		{
+			if (IsTargetAmountLimitReached) return base.HasPreviewGUI();
 			return defaultEditor.HasPreviewGUI();
 		}
 
 		public override void OnPreviewSettings()
 		{
+			if (IsTargetAmountLimitReached)
+			{
+				base.OnPreviewSettings();
+				return;
+			}
+
 			defaultEditor.OnPreviewSettings();
 		}
 
 		public override Texture2D RenderStaticPreview(
 			string assetPath, UnityEngine.Object[] subAssets, int width, int height)
 		{
+			if (IsTargetAmountLimitReached) return base.RenderStaticPreview(assetPath, subAssets, width, height);
 			return defaultEditor.RenderStaticPreview(assetPath, subAssets, width, height);
 		}
 
 		public override void OnPreviewGUI(Rect r, GUIStyle background)
 		{
+			if (IsTargetAmountLimitReached)
+			{
+				base.OnPreviewGUI(r, background);
+				return;
+			}
+
 			defaultEditor.OnPreviewGUI(r, background);
 		}
 
