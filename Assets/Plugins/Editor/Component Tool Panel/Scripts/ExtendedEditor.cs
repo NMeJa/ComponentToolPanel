@@ -7,7 +7,9 @@ namespace ComponentToolPanel
 	public abstract class ExtendedEditor : Editor
 	{
 		//I know not the best name. But it's the best I can come up with. 
-		private const BindingFlags BindingFlagsBothPublicAndNon = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+		private const BindingFlags BindingFlagsBothPublicAndNon =
+			BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+
 		private const string EnableName = "OnEnable";
 		private const string DisableName = "OnDisable";
 		protected Editor defaultEditor;
@@ -26,11 +28,12 @@ namespace ComponentToolPanel
 
 		private void OnEnable()
 		{
+			if (!ComponentToolPanel.IsUsed) return;
 			defaultEditor = CreateEditor(targets, DefaultEditorType);
 			var fallbackEditorType = GetDefaultEditor();
 			fallbackEditor = CreateEditor(targets, fallbackEditorType);
 			var enableMethod = fallbackEditorType.GetMethod(EnableName, BindingFlagsBothPublicAndNon);
-			
+
 			if (enableMethod != null)
 			{
 				enableMethod.Invoke(fallbackEditor, null);
@@ -42,6 +45,7 @@ namespace ComponentToolPanel
 
 		protected virtual void OnDisable()
 		{
+			if (!ComponentToolPanel.IsUsed) return;
 			OnDisableInternal();
 			var disableMethod = fallbackEditor.GetType().GetMethod(DisableName, BindingFlagsBothPublicAndNon);
 			if (disableMethod != null)
@@ -59,6 +63,8 @@ namespace ComponentToolPanel
 
 		public sealed override void OnInspectorGUI()
 		{
+			if (!ComponentToolPanel.IsUsed) return;
+
 			if (IsExtended)
 			{
 				OnCustomInspectorGUI();

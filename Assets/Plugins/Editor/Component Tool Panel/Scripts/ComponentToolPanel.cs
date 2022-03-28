@@ -19,6 +19,29 @@ namespace ComponentToolPanel
 	[SuppressMessage("ReSharper", "UnusedParameter.Local")]
 	public class ComponentToolPanel : Editor
 	{
+		#region Enable/Disable
+
+		private static bool isUsed = true;
+		public static bool IsUsed => isUsed;
+
+		[MenuItem("Tools/Component Tool Panel/Enable", false, 0)]
+		private static void EnableUse()
+		{
+			isUsed = true;
+			ClearSelection();
+		}
+
+		[MenuItem("Tools/Component Tool Panel/Disable", false, 1)]
+		private static void DisableUse()
+		{
+			isUsed = false;
+			ClearSelection();
+		}
+
+		private static void ClearSelection() => Selection.activeGameObject = null;
+
+		#endregion
+
 		private const string GameObjectInspectorTypeName = "UnityEditor.GameObjectInspector, UnityEditor";
 		private const string AddComponentWindowTypeName = "UnityEditor.AddComponentWindow, UnityEditor";
 		private const string CustomEditorAttributesTypeName = "UnityEditor.CustomEditorAttributes, UnityEditor";
@@ -136,8 +159,10 @@ namespace ComponentToolPanel
 			set => EditorPrefs.SetInt(CopiedComponentIDPrefsKey, value.GetInstanceID());
 		}
 
+
 		private void OnEnable()
 		{
+			if (!isUsed) return;
 			//Initialization Stuff 
 			InitializeCustomInspectors();
 			defaultEditor = CreateEditor(targets, Type.GetType(GameObjectInspectorTypeName));
@@ -548,7 +573,12 @@ namespace ComponentToolPanel
 
 		protected override void OnHeaderGUI()
 		{
-			if (IsTargetAmountLimitReached) return;
+			if (!isUsed || IsTargetAmountLimitReached)
+			{
+				base.OnHeaderGUI();
+				return;
+			}
+
 			//Paint the header of the default editor, then add custom functionality
 			defaultEditor.DrawHeader();
 
@@ -794,7 +824,7 @@ namespace ComponentToolPanel
 
 		public override void OnInspectorGUI()
 		{
-			if (IsTargetAmountLimitReached)
+			if (!isUsed || IsTargetAmountLimitReached)
 			{
 				base.OnInspectorGUI();
 				return;
@@ -805,7 +835,7 @@ namespace ComponentToolPanel
 
 		public override void ReloadPreviewInstances()
 		{
-			if (IsTargetAmountLimitReached)
+			if (!isUsed || IsTargetAmountLimitReached)
 			{
 				base.ReloadPreviewInstances();
 				return;
@@ -816,13 +846,14 @@ namespace ComponentToolPanel
 
 		public override bool HasPreviewGUI()
 		{
-			if (IsTargetAmountLimitReached) return base.HasPreviewGUI();
+			if (!isUsed || IsTargetAmountLimitReached)
+				return base.HasPreviewGUI();
 			return defaultEditor.HasPreviewGUI();
 		}
 
 		public override void OnPreviewSettings()
 		{
-			if (IsTargetAmountLimitReached)
+			if (!isUsed || IsTargetAmountLimitReached)
 			{
 				base.OnPreviewSettings();
 				return;
@@ -834,13 +865,14 @@ namespace ComponentToolPanel
 		public override Texture2D RenderStaticPreview(
 			string assetPath, UnityEngine.Object[] subAssets, int width, int height)
 		{
-			if (IsTargetAmountLimitReached) return base.RenderStaticPreview(assetPath, subAssets, width, height);
+			if (!isUsed || IsTargetAmountLimitReached)
+				return base.RenderStaticPreview(assetPath, subAssets, width, height);
 			return defaultEditor.RenderStaticPreview(assetPath, subAssets, width, height);
 		}
 
 		public override void OnPreviewGUI(Rect r, GUIStyle background)
 		{
-			if (IsTargetAmountLimitReached)
+			if (!isUsed || IsTargetAmountLimitReached)
 			{
 				base.OnPreviewGUI(r, background);
 				return;
