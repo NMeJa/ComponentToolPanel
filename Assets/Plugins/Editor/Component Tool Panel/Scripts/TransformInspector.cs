@@ -9,11 +9,8 @@ namespace ComponentToolPanel
 	public class TransformInspector : ExtendedEditor
 	{
 		private static Texture transformIcon;
-
 		private Transform transform;
-
 		protected override string DefaultEditorTypeName => "UnityEditor.TransformInspector, UnityEditor";
-
 		protected override Type InspectedType => typeof(Transform);
 
 		protected override void OnEnableInternal()
@@ -25,35 +22,44 @@ namespace ComponentToolPanel
 
 		protected override void OnCustomInspectorGUI()
 		{
-			EditorGUILayout.LabelField("Local Space", EditorStyles.boldLabel);
-			defaultEditor.OnInspectorGUI();
-
-			//Show World Space Transform
-			EditorGUILayout.Space();
-			EditorGUILayout.LabelField("World Space", EditorStyles.boldLabel);
-
-			GUI.enabled = false;
-			var localPosition = transform.localPosition;
-			var position = transform.position;
-
-			var localRotation = transform.localRotation;
-			var rotation = transform.rotation;
-
-			var localScale = transform.localScale;
-			var scale = transform.lossyScale;
-
-			defaultEditor.OnInspectorGUI();
-			position = localPosition;
-			transform.localPosition = position;
-			rotation = localRotation;
-			transform.localRotation = rotation;
-			scale = localScale;
-			transform.localScale = scale;
-			GUI.enabled = true;
+			DrawLocalTransform();
+			DrawWorldTransform();
 
 			if (targets.Length > 1) return;
 			if (transform.parent == null && transform.childCount <= 0) return;
 
+			DrawTransformInfoBox();
+		}
+
+		private void DrawWorldTransform()
+		{
+			EditorGUILayout.Space();
+			EditorGUILayout.LabelField("World Space", EditorStyles.boldLabel);
+
+			GUI.enabled = false;
+			ShowWorldTransform();
+			GUI.enabled = true;
+		}
+
+		private void DrawLocalTransform()
+		{
+			EditorGUILayout.LabelField("Local Space", EditorStyles.boldLabel);
+			defaultEditor.OnInspectorGUI();
+		}
+
+		private void ShowWorldTransform()
+		{
+			var worldPosition = transform.position;
+			var worldRotation = transform.rotation;
+			var worldScale = transform.lossyScale;
+
+			EditorGUILayout.Vector3Field("Position", worldPosition);
+			EditorGUILayout.Vector3Field("Rotation", worldRotation.eulerAngles);
+			EditorGUILayout.Vector3Field("Scale", worldScale);
+		}
+
+		private void DrawTransformInfoBox()
+		{
 			var labelWidth = EditorGUIUtility.labelWidth;
 			var fieldWidth = EditorGUIUtility.fieldWidth;
 			var fontSize = EditorStyles.label.fontSize;
@@ -63,61 +69,70 @@ namespace ComponentToolPanel
 
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-			{
-				var text = string.Empty;
-				if (transform.parent != null)
-				{
-					EditorGUILayout.BeginHorizontal();
-					{
-						var e = Event.current;
-						EditorGUILayout.LabelField(new GUIContent("Root: " + transform.root.name, transformIcon));
-						if (e.type == EventType.MouseDown && e.button == 0 &&
-						    GUILayoutUtility.GetLastRect().Contains(e.mousePosition))
-						{
-							if (e.clickCount == 2)
-							{
-								Selection.activeTransform = transform.root;
-							}
-							else
-							{
-								EditorGUIUtility.PingObject(transform.root);
-							}
-						}
-
-						EditorGUILayout.LabelField(new GUIContent("Parent: " + transform.parent.name, transformIcon));
-						if (e.type == EventType.MouseDown && e.button == 0 &&
-						    GUILayoutUtility.GetLastRect().Contains(e.mousePosition))
-						{
-							if (e.clickCount == 2)
-							{
-								Selection.activeTransform = transform.parent;
-							}
-							else
-							{
-								EditorGUIUtility.PingObject(transform.parent);
-							}
-						}
-					}
-					EditorGUILayout.EndHorizontal();
-					text = "Sibling Index: " + transform.GetSiblingIndex() + "\t";
-				}
-
-				if (transform.childCount > 0)
-				{
-					text += "Child Count: " + transform.childCount;
-				}
-
-				EditorGUILayout.LabelField(text);
-				if (transform.parent != null && GUILayout.Button("UnParent", EditorStyles.miniButton))
-				{
-					Undo.SetTransformParent(transform, null, "UnParent");
-					transform.SetParent(null);
-				}
-			}
+			ShowTransformInfoBox();
 			EditorGUILayout.EndVertical();
+
 			EditorGUIUtility.labelWidth = labelWidth;
 			EditorGUIUtility.fieldWidth = fieldWidth;
 			EditorStyles.label.fontSize = fontSize;
+		}
+
+		private void ShowTransformInfoBox()
+		{
+			var text = string.Empty;
+			if (transform.parent != null)
+			{
+				EditorGUILayout.BeginHorizontal();
+				ShowParentAndRootTransform();
+				EditorGUILayout.EndHorizontal();
+
+				text = $"Sibling Index: {transform.GetSiblingIndex()}\t";
+			}
+
+			ShowSiblingAndChildrenCount(text);
+			UnParent();
+		}
+
+		private void ShowParentAndRootTransform()
+		{
+			var currentEvent = Event.current;
+			var root = transform.root;
+			EditorGUILayout.LabelField(new GUIContent($"Root: {root.name}", transformIcon));
+			SelectGameObject(currentEvent, root);
+
+			var parent = transform.parent;
+			EditorGUILayout.LabelField(new GUIContent("Parent: " + parent.name, transformIcon));
+			SelectGameObject(currentEvent, parent);
+		}
+
+		private void SelectGameObject(Event e, Transform selectedTransform)
+		{
+			var lastRect = GUILayoutUtility.GetLastRect();
+			if (e.type != EventType.MouseDown || e.button != 0 || !lastRect.Contains(e.mousePosition)) return;
+
+			if (e.clickCount == 2)
+			{
+				Selection.activeTransform = selectedTransform;
+			}
+			else
+			{
+				EditorGUIUtility.PingObject(selectedTransform);
+			}
+		}
+
+		private void ShowSiblingAndChildrenCount(string text)
+		{
+			if (transform.childCount > 0)
+				text += $"Child Count: {transform.childCount}";
+
+			EditorGUILayout.LabelField(text);
+		}
+
+		private void UnParent()
+		{
+			if (transform.parent is null || !GUILayout.Button("UnParent", EditorStyles.miniButton)) return;
+			Undo.SetTransformParent(transform, null, "UnParent");
+			transform.SetParent(null);
 		}
 	}
 }
