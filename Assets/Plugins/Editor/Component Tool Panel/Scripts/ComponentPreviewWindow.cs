@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -9,6 +10,8 @@ using Component = UnityEngine.Component;
 
 namespace ComponentToolPanel
 {
+	//SuppressMessage are for making sure that older versions of Unity don't have problem, while accidentally refactoring the code
+	[SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
 	public class ComponentPreviewWindow : EditorWindow
 	{
 		private const int Width = 400;
