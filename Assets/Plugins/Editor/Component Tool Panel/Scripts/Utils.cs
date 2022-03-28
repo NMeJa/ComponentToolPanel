@@ -30,20 +30,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (infoIcon == null)
-				{
-					infoIcon = Resources.FindObjectsOfTypeAll<Texture2D>().FirstOrDefault(x => x.name == InfoIconName);
-				}
-
-				if (infoIcon == null)
-				{
-					infoIcon = EditorGUIUtility.IconContent(InfoIconName).image as Texture2D;
-				}
-
-				if (infoIcon == null)
-				{
-					infoIcon = EditorGUIUtility.FindTexture(InfoIconName);
-				}
-
+					infoIcon = FindTexture(InfoIconName);
 				return infoIcon;
 			}
 		}
@@ -53,21 +40,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (nonFavoriteIcon == null)
-				{
-					nonFavoriteIcon = Resources.FindObjectsOfTypeAll<Texture2D>()
-					                           .FirstOrDefault(x => x.name == NonFavoriteIconName);
-				}
-
-				if (nonFavoriteIcon == null)
-				{
-					nonFavoriteIcon = EditorGUIUtility.IconContent(NonFavoriteIconName).image as Texture2D;
-				}
-
-				if (nonFavoriteIcon == null)
-				{
-					nonFavoriteIcon = EditorGUIUtility.FindTexture(NonFavoriteIconName);
-				}
-
+					nonFavoriteIcon = FindTexture(NonFavoriteIconName);
 				return nonFavoriteIcon;
 			}
 		}
@@ -77,21 +50,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (favoriteIcon == null)
-				{
-					favoriteIcon = Resources.FindObjectsOfTypeAll<Texture2D>()
-					                        .FirstOrDefault(x => x.name == FavoriteIconName);
-				}
-
-				if (favoriteIcon == null)
-				{
-					favoriteIcon = EditorGUIUtility.IconContent(FavoriteIconName).image as Texture2D;
-				}
-
-				if (favoriteIcon == null)
-				{
-					favoriteIcon = EditorGUIUtility.FindTexture(FavoriteIconName);
-				}
-
+					favoriteIcon = FindTexture(FavoriteIconName);
 				return favoriteIcon;
 			}
 		}
@@ -101,21 +60,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (closeIcon == null)
-				{
-					closeIcon = Resources.FindObjectsOfTypeAll<Texture2D>()
-					                     .FirstOrDefault(x => x.name == CloseIconName);
-				}
-
-				if (closeIcon == null)
-				{
-					closeIcon = EditorGUIUtility.IconContent(CloseIconName).image as Texture2D;
-				}
-
-				if (closeIcon == null)
-				{
-					closeIcon = EditorGUIUtility.FindTexture(CloseIconName);
-				}
-
+					closeIcon = FindTexture(CloseIconName);
 				return closeIcon;
 			}
 		}
@@ -125,15 +70,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (documentIcon == null)
-				{
-					documentIcon = EditorGUIUtility.IconContent(DocumentIconName).image as Texture2D;
-				}
-
-				if (documentIcon == null)
-				{
-					documentIcon = EditorGUIUtility.FindTexture(DocumentIconName);
-				}
-
+					documentIcon = FindTexture(DocumentIconName);
 				return documentIcon;
 			}
 		}
@@ -143,15 +80,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (folderIcon == null)
-				{
-					folderIcon = EditorGUIUtility.IconContent(FolderIconName).image as Texture2D;
-				}
-
-				if (folderIcon == null)
-				{
-					folderIcon = EditorGUIUtility.FindTexture(FolderIconName);
-				}
-
+					folderIcon = FindTexture(FolderIconName);
 				return folderIcon;
 			}
 		}
@@ -161,16 +90,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (resetIcon == null)
-				{
-					resetIcon = Resources.FindObjectsOfTypeAll<Texture2D>()
-					                     .FirstOrDefault(x => x.name == ResetIconName);
-				}
-
-				if (resetIcon == null)
-				{
-					resetIcon = EditorGUIUtility.FindTexture(ResetIconName);
-				}
-
+					resetIcon = FindTexture(ResetIconName);
 				return resetIcon;
 			}
 		}
@@ -180,10 +100,7 @@ namespace ComponentToolPanel
 			get
 			{
 				if (editIcon == null)
-				{
-					editIcon = EditorGUIUtility.FindTexture(EditIconName);
-				}
-
+					editIcon = FindTexture(EditIconName);
 				return editIcon;
 			}
 		}
@@ -193,23 +110,23 @@ namespace ComponentToolPanel
 			get
 			{
 				if (warningIcon == null)
-				{
-					warningIcon = Resources.FindObjectsOfTypeAll<Texture2D>()
-					                       .FirstOrDefault(x => x.name == WarningIconName);
-				}
-
-				if (warningIcon == null)
-				{
-					warningIcon = EditorGUIUtility.IconContent(WarningIconName).image as Texture2D;
-				}
-
-				if (warningIcon == null)
-				{
-					warningIcon = EditorGUIUtility.FindTexture(WarningIconName);
-				}
-
+					warningIcon = FindTexture(WarningIconName);
 				return warningIcon;
 			}
+		}
+
+		private static Texture2D FindTexture(string iconName)
+		{
+			Texture2D texture2D = null;
+			texture2D = EditorGUIUtility.IconContent(iconName).image as Texture2D;
+
+			if (texture2D == null)
+				texture2D = Resources.FindObjectsOfTypeAll<Texture2D>().FirstOrDefault(x => x.name == iconName);
+
+			if (texture2D == null)
+				texture2D = EditorGUIUtility.FindTexture(iconName);
+
+			return texture2D;
 		}
 	}
 }

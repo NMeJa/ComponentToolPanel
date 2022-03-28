@@ -21,20 +21,19 @@ namespace ComponentToolPanel
 	{
 		#region Enable/Disable
 
-		private static bool isUsed = true;
-		public static bool IsUsed => isUsed;
+		public static bool IsUsed { get; private set; } = true;
 
 		[MenuItem("Tools/Component Tool Panel/Enable", false, 0)]
 		private static void EnableUse()
 		{
-			isUsed = true;
+			IsUsed = true;
 			ClearSelection();
 		}
 
 		[MenuItem("Tools/Component Tool Panel/Disable", false, 1)]
 		private static void DisableUse()
 		{
-			isUsed = false;
+			IsUsed = false;
 			ClearSelection();
 		}
 
@@ -162,7 +161,7 @@ namespace ComponentToolPanel
 
 		private void OnEnable()
 		{
-			if (!isUsed) return;
+			if (!IsUsed) return;
 			//Initialization Stuff 
 			InitializeCustomInspectors();
 			defaultEditor = CreateEditor(targets, Type.GetType(GameObjectInspectorTypeName));
@@ -573,7 +572,7 @@ namespace ComponentToolPanel
 
 		protected override void OnHeaderGUI()
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 			{
 				base.OnHeaderGUI();
 				return;
@@ -824,7 +823,7 @@ namespace ComponentToolPanel
 
 		public override void OnInspectorGUI()
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 			{
 				base.OnInspectorGUI();
 				return;
@@ -835,7 +834,7 @@ namespace ComponentToolPanel
 
 		public override void ReloadPreviewInstances()
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 			{
 				base.ReloadPreviewInstances();
 				return;
@@ -846,14 +845,14 @@ namespace ComponentToolPanel
 
 		public override bool HasPreviewGUI()
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 				return base.HasPreviewGUI();
 			return defaultEditor.HasPreviewGUI();
 		}
 
 		public override void OnPreviewSettings()
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 			{
 				base.OnPreviewSettings();
 				return;
@@ -865,14 +864,14 @@ namespace ComponentToolPanel
 		public override Texture2D RenderStaticPreview(
 			string assetPath, UnityEngine.Object[] subAssets, int width, int height)
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 				return base.RenderStaticPreview(assetPath, subAssets, width, height);
 			return defaultEditor.RenderStaticPreview(assetPath, subAssets, width, height);
 		}
 
 		public override void OnPreviewGUI(Rect r, GUIStyle background)
 		{
-			if (!isUsed || IsTargetAmountLimitReached)
+			if (!IsUsed || IsTargetAmountLimitReached)
 			{
 				base.OnPreviewGUI(r, background);
 				return;
