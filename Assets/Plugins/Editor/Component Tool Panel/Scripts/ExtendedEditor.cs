@@ -63,7 +63,11 @@ namespace ComponentToolPanel
 
 		public sealed override void OnInspectorGUI()
 		{
-			if (!ComponentToolPanel.IsUsed) return;
+			if (!ComponentToolPanel.IsUsed)
+			{
+				base.OnInspectorGUI();
+				return;
+			}
 
 			if (IsExtended)
 			{
