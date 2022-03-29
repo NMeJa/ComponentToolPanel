@@ -47,6 +47,12 @@ namespace ComponentToolPanel
 		private const string FoldoutPrefsKey = "Component Tool Panel expanded";
 		private const string DummyName = "Component Tool Panel Dummy";
 		private const string CopiedComponentIDPrefsKey = "Component Tool Panel Copied Component ID";
+		private const string CustMultiEditors = "kSCustomMultiEditors";
+		private const BindingFlags BFlagsStaticNonPublic = BindingFlags.Static | BindingFlags.NonPublic;
+		private const BindingFlags BFlagsInstancePublic = BindingFlags.Instance | BindingFlags.Public;
+		private const string InspectedType = "m_InspectedType";
+		private const string InspectorType = "m_InspectorType";
+		private const string IsFallback = "m_IsFallback";
 
 		private static readonly List<ExtendedEditors> extendedEditors = new List<ExtendedEditors>
 		{
@@ -158,7 +164,6 @@ namespace ComponentToolPanel
 			set => EditorPrefs.SetInt(CopiedComponentIDPrefsKey, value.GetInstanceID());
 		}
 
-
 		private void OnEnable()
 		{
 			if (!IsUsed) return;
@@ -167,18 +172,15 @@ namespace ComponentToolPanel
 			defaultEditor = CreateEditor(targets, Type.GetType(GameObjectInspectorTypeName));
 			if (IsTargetAmountLimitReached) return;
 
-			gameObjects = new GameObject[targets.Length];
-			lists = new ReorderableList[targets.Length];
-			components = new List<Component>[targets.Length];
-			transforms = new Transform[targets.Length];
-			foldouts = new bool[targets.Length];
-			for (var i = 0; i < targets.Length; i++)
-			{
+			var length = targets.Length;
+			CreateArrays(length);
+			for (var i = 0; i < length; i++)
 				InitializeList(i);
-			}
 
-			defaultEditor.GetType().GetMethod("OnEnable")?.Invoke(defaultEditor, null);
+			const string methodName = nameof(OnEnable);
+			GetMethod(methodName);
 		}
+
 
 		private void OnDisable()
 		{
@@ -188,44 +190,66 @@ namespace ComponentToolPanel
 
 		public void OnDestroy()
 		{
-			defaultEditor.GetType().GetMethod("OnDestroy")?.Invoke(defaultEditor, null);
+			const string methodName = nameof(OnDestroy);
+			GetMethod(methodName);
 		}
 
 		public void OnSceneDrag(SceneView sceneView, int index)
 		{
-			defaultEditor.GetType().GetMethod("OnSceneDrag")?.Invoke(defaultEditor, new object[] {sceneView, index});
+			var parameters = new object[] {sceneView, index};
+			const string methodName = nameof(OnSceneDrag);
+			GetMethod(methodName, parameters);
+		}
+
+		private void GetMethod(string methodName, object[] parameters = null)
+		{
+			defaultEditor.GetType().GetMethod(methodName)?.Invoke(defaultEditor, parameters);
 		}
 
 		private void InitializeCustomInspectors()
 		{
-			Type type = Type.GetType(CustomEditorAttributesTypeName);
-			IList list = type?.GetField("kSCustomMultiEditors", BindingFlags.Static | BindingFlags.NonPublic)
-			                 ?.GetValue(null) as IList;
-			if (list == null) return;
-			for (int i = list.Count - 1; i >= 0; i--)
+			var customEditorType = Type.GetType(CustomEditorAttributesTypeName);
+			var fieldInfo = customEditorType?.GetField(CustMultiEditors, BFlagsStaticNonPublic);
+			if (!(fieldInfo?.GetValue(null) is IList list)) return;
+			for (var i = list.Count - 1; i >= 0; i--)
 			{
-				Type inspectedType = (Type) list[i].GetType()
-				                                   .GetField("m_InspectedType",
-				                                             BindingFlags.Instance | BindingFlags.Public)
-				                                   ?.GetValue(list[i]);
-				try
-				{
-					ExtendedEditors extendedEditor = extendedEditors.First(x => x.inspectedType == inspectedType);
-					FieldInfo inspectorTypeField = list[i].GetType().GetField("m_InspectorType",
-					                                                          BindingFlags.Instance |
-					                                                          BindingFlags.Public);
-					Type inspectorType = (Type) inspectorTypeField?.GetValue(list[i]);
-					originalEditors.Add(new ExtendedEditors(inspectedType, inspectorType));
-
-					if (inspectorType != extendedEditor.inspectorType)
-						list[i].GetType().GetField("m_IsFallback", BindingFlags.Instance | BindingFlags.Public)
-						       ?.SetValue(list[i], true);
-				}
-				catch
-				{
-					throw new Exception("Could not find the extended editor for " + inspectedType);
-				}
+				var element = list[i];
+				FindCustomInspectors(element);
 			}
+		}
+
+		private static void FindCustomInspectors(object element)
+		{
+			var eType = element.GetType();
+			var eFieldInfo = eType.GetField(InspectedType, BFlagsInstancePublic);
+			var inspectedType = (Type) eFieldInfo?.GetValue(element);
+			try
+			{
+				CreateExtendedEditor(element, inspectedType, eType);
+			}
+			catch
+			{
+				throw new Exception("Could not find the extended editor for " + inspectedType);
+			}
+		}
+
+		private static void CreateExtendedEditor(object element, Type inspectedT, Type eType)
+		{
+			var extendedEditor = extendedEditors.First(x => x.inspectedType == inspectedT);
+			var inspectorTypeFieldInfo = eType.GetField(InspectorType, BFlagsInstancePublic);
+			var inspectorType = (Type) inspectorTypeFieldInfo?.GetValue(element);
+			originalEditors.Add(new ExtendedEditors(inspectedT, inspectorType));
+			if (inspectorType != extendedEditor.inspectorType)
+				eType.GetField(IsFallback, BFlagsInstancePublic)?.SetValue(element, true);
+		}
+
+		private void CreateArrays(int length)
+		{
+			gameObjects = new GameObject[length];
+			lists = new ReorderableList[length];
+			components = new List<Component>[length];
+			transforms = new Transform[length];
+			foldouts = new bool[length];
 		}
 
 		//This is called for every inspected gameObject
@@ -252,7 +276,7 @@ namespace ComponentToolPanel
 			list.onAddDropdownCallback += (rect, _) =>
 				{
 					Type.GetType(AddComponentWindowTypeName)
-					    ?.GetMethod("Show", BindingFlags.Static | BindingFlags.NonPublic)
+					    ?.GetMethod("Show", BFlagsStaticNonPublic)
 					    ?.Invoke(null,
 					             new object[]
 					             {
@@ -375,7 +399,7 @@ namespace ComponentToolPanel
 				foreach (var targetComponent in targetComponents)
 					InternalEditorUtility.SetIsInspectorExpanded(targetComponent, value);
 
-				typeof(EditorUtility).GetMethod("ForceRebuildInspectors", BindingFlags.Static | BindingFlags.NonPublic)
+				typeof(EditorUtility).GetMethod("ForceRebuildInspectors", BFlagsStaticNonPublic)
 				                     .Invoke(null, null);
 			}
 
@@ -574,6 +598,7 @@ namespace ComponentToolPanel
 		{
 			if (!IsUsed || IsTargetAmountLimitReached)
 			{
+				//BUG when target amount is reached or the tool is disabled, the default header is drawn incorectly
 				base.OnHeaderGUI();
 				return;
 			}
@@ -883,11 +908,11 @@ namespace ComponentToolPanel
 		[Flags]
 		private enum GetTargetComponentMode
 		{
-			None = 0,
-			IncludeTransforms = 1,
-			ExcludeDifferentTypes = 2,
-			AllowMultiComponent = 4,
-			AllowMultiGameObject = 8
+			None = 1 << 0,
+			IncludeTransforms = 1 << 1,
+			ExcludeDifferentTypes = 1 << 2,
+			AllowMultiComponent = 1 << 3,
+			AllowMultiGameObject = 1 << 4,
 		}
 	}
 }
